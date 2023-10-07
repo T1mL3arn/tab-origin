@@ -33,7 +33,7 @@ function openTabOrigin(tab) {
             });
         } else {
             console.log("Could not find origin for tab", id);
-            api.browserAction.setBadgeText({text: "N/A", tabId: tab.id});
+            api.action.setBadgeText({text: "N/A", tabId: tab.id});
         }
     });
 }
@@ -59,7 +59,7 @@ function updateOpenerState(newTab, openerTab) {
 
 }
 
-api.browserAction.onClicked.addListener(openTabOrigin);
+api.action.onClicked.addListener(openTabOrigin);
 
 // Remark: on new tab creation, we receive onCreated before onActivated.
 api.tabs.onActivated.addListener(info => {
