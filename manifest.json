@@ -1,6 +1,6 @@
 {
     "manifest_version": 2,
-    "name": "Tab Origin",
+    "name": "[DEV] Tab Origin",
     "description": "Return to the page from which you opened this tab.",
     "author": "Peter Elmers",
     "version": "1.0.4",
@@ -25,5 +25,9 @@
     "background": {
         "scripts": ["background.js"],
         "persistent": false
+    },
+    "options_ui": {
+        "page": "options/options.html"
+    },
     }
 }
