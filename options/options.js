@@ -22,7 +22,4 @@ function setActionHint(actionType) {
 }
 
 // init - load settings 
-chrome.storage.local.get(lib.actionTypeKey).then(data => {
-    const actionType = data[lib.actionTypeKey] || lib.actionType.OPEN_TAB
-    setActionType(actionType)
-})
+lib.getActionType().then(setActionType)
