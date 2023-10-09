@@ -5,6 +5,7 @@ const actionTypeHint = {
     'show-popup': 'Show a popup with origin url. From there you can decide if you want to open that url.',
 }
 const actionElt = document.querySelector('#extension-action-type')
+
 setActionType('open-tab')
 
 actionElt.addEventListener('change', _ => {
