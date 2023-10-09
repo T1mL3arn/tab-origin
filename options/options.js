@@ -1,12 +1,13 @@
 const actionTypeKey = 'extension-action-type'
+const OPEN_TAB_ACTION = 'open-tab'
 const actionTypeHint = {
-    'open-tab': 'Open and go to origin tab, if it is possible',
+    [OPEN_TAB_ACTION]: 'Open and go to origin tab, if it is possible',
     'go-to-tab-if-open': 'Go to origin tab only if it\'s open. Otherwise show a popup with origin url.',
     'show-popup': 'Show a popup with origin url. From there you can decide if you want to open that url.',
 }
 const actionElt = document.querySelector('#extension-action-type')
 
-setActionType('open-tab')
+setActionType(OPEN_TAB_ACTION)
 
 actionElt.addEventListener('change', _ => {
     console.log(actionElt.value);
@@ -25,7 +26,8 @@ function setActionHint(actionType) {
     hintElt.textContent = actionTypeHint[actionType]
 }
 
+// init - load settings 
 chrome.storage.local.get(actionTypeKey).then(data => {
-    const actionType = data[actionTypeKey]
+    const actionType = data[actionTypeKey] || OPEN_TAB_ACTION
     setActionType(actionType)
 })
