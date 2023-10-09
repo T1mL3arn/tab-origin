@@ -2,7 +2,6 @@ import * as lib from '/lib.js'
 
 const actionElt = document.querySelector('#extension-action-type')
 
-console.log(lib.actionType);
 setActionType(lib.actionType.OPEN_TAB)
 
 actionElt.addEventListener('change', _ => {
