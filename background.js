@@ -1,12 +1,9 @@
-const SHOW_POPUP = 'show-popup'
-const GO_TO_TAB_IF_OPEN = 'go-to-tab-if-open'
-const GO_TO_TAB = 'open-tab'
+import * as lib from '/lib.js'
 
 // TODO: port to browser api
 const api = chrome;
 
 const activeTabKey = "activeTab";
-const actionTypeKey = 'extension-action-type'
 
 // Return the last element in an array.
 // If the array is empty, return null.
@@ -24,9 +21,9 @@ function last(array) {
     prepare popup beforehand
 */
 api.storage.local.onChanged.addListener(changes => {
-    const actionType = changes[actionTypeKey]
+    const actionType = changes[lib.actionTypeKey]
     // looking only for "action type" changes
-    if (actionType && actionType.newValue === SHOW_POPUP)
+    if (actionType && actionType.newValue === lib.actionType.SHOW_POPUP)
         api.action.setPopup({ popup: '/popup/popup.html' })
     else 
         api.action.setPopup({ popup: '' })
@@ -34,21 +31,22 @@ api.storage.local.onChanged.addListener(changes => {
  
 // Open the origin url of the given tab.
 async function openTabOrigin(tab) {
-    const action = await api.storage.local.get({ [actionTypeKey]: GO_TO_TAB }).then( d => d[actionTypeKey])
+    const action = await api.storage.local.get({ [lib.actionTypeKey]: lib.actionType.OPEN_TAB })
+                    .then( d => d[lib.actionTypeKey])
     console.log('chosen action:', action)
 
     switch (action) {
-        case SHOW_POPUP:
+        case lib.actionType.SHOW_POPUP:
 
             api.action.openPopup()
             console.log('opening popup...');
             return;
 
-        case GO_TO_TAB_IF_OPEN:
+        case lib.actionType.lib.actionType.OPEN_TAB_IF_OPEN:
 
             break;
 
-        case GO_TO_TAB:
+        case lib.actionType.OPEN_TAB:
         default:
 
             api.action.setPopup({ popup: null })
