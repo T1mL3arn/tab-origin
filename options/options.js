@@ -1,19 +1,15 @@
-const actionTypeKey = 'extension-action-type'
-const OPEN_TAB_ACTION = 'open-tab'
-const actionTypeHint = {
-    [OPEN_TAB_ACTION]: 'Open and go to origin tab, if it is possible',
-    'go-to-tab-if-open': 'Go to origin tab only if it\'s open. Otherwise show a popup with origin url.',
-    'show-popup': 'Show a popup with origin url. From there you can decide if you want to open that url.',
-}
+import * as lib from '/lib.js'
+
 const actionElt = document.querySelector('#extension-action-type')
 
-setActionType(OPEN_TAB_ACTION)
+console.log(lib.actionType);
+setActionType(lib.actionType.OPEN_TAB)
 
 actionElt.addEventListener('change', _ => {
     console.log(actionElt.value);
     setActionHint(actionElt.value)
-    chrome.storage.local.set({ [actionTypeKey]: actionElt.value })
-    // chrome.storage.local.get(actionTypeKey).then(r => console.log('set()', r))
+    chrome.storage.local.set({ [lib.actionTypeKey]: actionElt.value })
+    // chrome.storage.local.get(lib.actionTypeKey).then(r => console.log('set()', r))
 })
 
 function setActionType(actionType) {
@@ -23,11 +19,11 @@ function setActionType(actionType) {
 
 function setActionHint(actionType) {
     const hintElt = document.querySelector('#extension-action-type ~ .form-group-hint')
-    hintElt.textContent = actionTypeHint[actionType]
+    hintElt.textContent = lib.actionTypeHint[actionType]
 }
 
 // init - load settings 
-chrome.storage.local.get(actionTypeKey).then(data => {
-    const actionType = data[actionTypeKey] || OPEN_TAB_ACTION
+chrome.storage.local.get(lib.actionTypeKey).then(data => {
+    const actionType = data[lib.actionTypeKey] || lib.actionType.OPEN_TAB
     setActionType(actionType)
 })
