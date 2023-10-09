@@ -1,6 +1,6 @@
 const SHOW_POPUP = 'show-popup'
 const GO_TO_TAB_IF_OPEN = 'go-to-tab-if-open'
-const GO_TO_TAB = 'go-to-tab'
+const GO_TO_TAB = 'open-tab'
 
 // TODO: port to browser api
 const api = chrome;

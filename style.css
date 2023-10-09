@@ -1,0 +1,25 @@
+* {
+	box-sizing: border-box;
+}
+
+select {
+	padding: 6px 12px;
+	margin: 0;
+	color: #333;
+}
+
+.form-group > * {
+	display: inline-block;
+	margin-bottom: 1em;
+	font-size: 1em;
+}
+
+.form-group-hint {
+	font-size: 14px;
+	color: #5a5a5a;
+}
+
+.w-45 { width: 45%; }
+.w-30 { width: 30%; }
+.w-100 { width: 100%; }
+.w-auto { width: auto; }

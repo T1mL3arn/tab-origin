@@ -4,16 +4,21 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Tab Origin Settings</title>
+	<link rel="stylesheet" href="/style.css">
 </head>
-<body style="height: 400px;">
-	<div>
-		<select name="extension-action-type" id="extension-action-type">
-			<option value="go-to-tab">Always go to Tab</option>
-			<option value="go-to-tab-if-open">Go to Tab if it is open</option>
-			<option value="show-popup">Always show popup</option>
+<body style="min-height: 400px;">
+	<div class="form-group">
+		<label for="extension-action-type" class="w-30">Extension Action</label>
+		<select id="extension-action-type" class="w-45">
+			<option value="open-tab">Open tab (default)</option>
+			<option value="go-to-tab-if-open">Go to tab if it's open</option>
+			<option value="show-popup">Show popup</option>
 		</select>
+		<div class="w-30"></div>
+		<div class="w-45 form-group-hint">
+			<p class="">Lorem ipsum dolor sit amet consectetur adipisicing elit. Repudiandae, non a? Mollitia, iusto, esse, optio quam at porro blanditiis dolores vitae et obcaecati voluptates!</p>
+		</div>
 	</div>
-	<br><br><br><br><br>
 	<script src="./options.js"></script>
 </body>
 </html>
