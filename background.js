@@ -13,6 +13,17 @@ function last(array) {
     return array[array.length - 1];
 }
 
+function setActionType(type) {
+    if (type === lib.actionType.SHOW_POPUP) {
+        api.action.setPopup({ popup: '/popup/popup.html' })
+        api.action.onClicked.removeListener(openTabOrigin);
+    }
+    else {
+        api.action.setPopup({ popup: '' })
+        api.action.onClicked.addListener(openTabOrigin);
+    }
+}
+
 /* 
     opening popup requires user gesture,
     but using await in action.onClicked()
@@ -23,10 +34,8 @@ function last(array) {
 api.storage.local.onChanged.addListener(changes => {
     const actionType = changes[lib.actionTypeKey]
     // looking only for "action type" changes
-    if (actionType && actionType.newValue === lib.actionType.SHOW_POPUP)
-        api.action.setPopup({ popup: '/popup/popup.html' })
-    else 
-        api.action.setPopup({ popup: '' })
+    if (actionType)
+        setActionType(actionType.newValue)
 })
  
 // Open the origin url of the given tab.
@@ -102,8 +111,6 @@ function updateOpenerState(newTab, openerTab) {
 
 }
 
-api.action.onClicked.addListener(openTabOrigin);
-
 // Remark: on new tab creation, we receive onCreated before onActivated.
 api.tabs.onActivated.addListener(info => {
     const id = info.tabId;
@@ -138,3 +145,9 @@ api.tabs.onCreated.addListener(function(tab) {
 api.tabs.onRemoved.addListener(function(tabId) {
     api.storage.local.set({[tabId.toString()]: []});
 });
+
+// init - load settings 
+api.storage.local.get(lib.actionTypeKey).then(data => {
+    const actionType = data[lib.actionTypeKey] || lib.actionType.OPEN_TAB
+    setActionType(actionType)
+})
