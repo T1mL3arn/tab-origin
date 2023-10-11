@@ -5,10 +5,8 @@ const actionElt = document.querySelector('#extension-action-type')
 setActionType(lib.actionType.OPEN_TAB)
 
 actionElt.addEventListener('change', _ => {
-    console.log(actionElt.value);
     setActionHint(actionElt.value)
     chrome.storage.local.set({ [lib.actionTypeKey]: actionElt.value })
-    // chrome.storage.local.get(lib.actionTypeKey).then(r => console.log('set()', r))
 })
 
 function setActionType(actionType) {

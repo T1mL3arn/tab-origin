@@ -25,8 +25,9 @@ export function sendMessage(msgType, payload) {
 }
 
 /**
- * Reads action type from storage.local 
- * or `OPEN_TAB` action if storage is empty.
+ * Resolves a promise with "action type" value
+ * stored in `storage.local`, if no such value
+ * is stored then `OPEN_TAB` value is resolved.
  * @returns {Promise<String>}
  */
 export function getActionType() {
@@ -39,6 +40,9 @@ export function focusTab(tabId, windowId) {
 }
 
 export function createTab(url, index, historyStack) {
+	// createTab() can reject when you try to open
+	// privileged urls like "about:config",
+	// see https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/Tabs/create#url
 	return chrome.tabs.create({ url, index })
 		.then(newtab => {
 			// We don't want to set the last tab to the one we just came

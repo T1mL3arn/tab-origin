@@ -8,6 +8,7 @@ const activeTabKey = "activeTab";
 
 let lastTabOriginData = {}
 
+/** What action should be done when user clicks extension button */
 let currentActionType;
 
 // Return the last element in an array.
@@ -18,99 +19,88 @@ function last(array) {
 	return array[array.length - 1];
 }
 
-function updateActionType(type) {
-	currentActionType = type
-}
-
-/* 
-		opening popup requires user gesture,
-		but using await in action.onClicked()
-		removes "user gesture" from the browser's point of view,
-		so I have to subscribe to storage changes and
-		prepare popup beforehand
-*/
 api.storage.local.onChanged.addListener(changes => {
-	const actionType = changes[actionTypeKey]
-	// looking only for "action type" changes
-	if (actionType) {
-		updateActionType(actionType.newValue)
-	}
+    const actionType = changes[actionTypeKey]
+    // looking only for "action type" changes
+    if (actionType) {
+        currentActionType = actionType.newValue
+    }
 })
 
-// Open the origin url of the given tab.
-async function openTabOrigin(tab) {
-	console.log('on action click');
-	console.log('chosen action:', currentActionType)
+/** 
+ * React on extension button click and execute
+ * current action (open tab, show popup, etc.)
+ */
+function extensionButtonClick(tab) {
 
-	lastTabOriginData = {}
+    lastTabOriginData = {}
 
-	const tabId = tab.id.toString();
+    const tabId = tab.id.toString();
 
-	if (currentActionType === actionType.SHOW_POPUP 
-		|| currentActionType === actionType.GO_TO_TAB_IF_OPEN) {
-		api.action.setPopup({ popup: '/popup/popup.html' })
-	}
-	else {
-		api.action.setPopup({ popup: '' })
-	}
+    if (currentActionType === actionType.SHOW_POPUP 
+        || currentActionType === actionType.GO_TO_TAB_IF_OPEN) {
+        api.action.setPopup({ popup: '/popup/popup.html' })
+    }
+    else {
+        api.action.setPopup({ popup: '' })
+    }
 
-	// initiate "open tab" promises
-	// if action is "show popup" - show it
-	// send data to popup
+    api.storage.local.get(tabId)
+        .then(result => {
+            const result_stack = result[tabId] || [];
+            const url = last(result_stack)
+            if (url) {
+                api.tabs.query({ url }, function (matches) {
+                    
+                    let originTabId = matches[0]?.id
+                        , windowId = matches[0]?.windowId
+                        , currentTabIndex = tab.index;
+                    
+                    const originTabIsOpen = matches.length > 0;
+                    const tabOriginData = originTabIsOpen ? 
+                        { tabId: originTabId, windowId, url } : { url, currentTabIndex, currentTabId: tab.id }
 
-	api.storage.local.get(tabId)
-		.then(result => {
-			const result_stack = result[tabId] || [];
-			const url = last(result_stack)
-			if (url) {
-				api.tabs.query({ url }, function (matches) {
-					
-					let originTabId = matches[0]?.id
-						, windowId = matches[0]?.windowId
-						, currentTabIndex = tab.index;
-					
-					const originTabIsOpen = matches.length > 0;
-					const tabOriginData = originTabIsOpen ? 
-						{ tabId: originTabId, windowId, url } : { url, currentTabIndex, currentTabId: tab.id }
+                    if (currentActionType === actionType.SHOW_POPUP) {
 
-					if (currentActionType === actionType.SHOW_POPUP) {
+                        lastTabOriginData = tabOriginData
+                        
+                    } else if (currentActionType === actionType.GO_TO_TAB_IF_OPEN) {
 
-						lastTabOriginData = tabOriginData
-						
-					} else if (currentActionType === actionType.GO_TO_TAB_IF_OPEN) {
+                        if (originTabIsOpen)
+                            lib.focusTab(originTabId, windowId)
+                        else {
+                            lastTabOriginData = tabOriginData
+                        }
 
-						if (originTabIsOpen)
-							lib.focusTab(originTabId, windowId)
-						else {
-							lastTabOriginData = tabOriginData
-						}
+                    } else {
+                        // otherwise it is default "open tab" action
 
-					} else {
-						// otherwise it is default "open tab" action
+                        if (originTabIsOpen)
+                            lib.focusTab(originTabId, windowId)
+                        else {
+                            lib.createTab(url, currentTabIndex, result_stack)
+                                .catch(err => {
+                                    console.error('Cannot create tab.', err.message)
+                                    api.action.setBadgeText({ text: "N/A", tabId: tab.id })
+                                })
+                        }
+                    }
+                });
+            } else {
+                console.log("Could not find origin for tab", tabId);
+                api.action.setBadgeText({ text: "N/A", tabId: tab.id });
+            }
+        })
 
-						if (originTabIsOpen)
-							lib.focusTab(originTabId, windowId)
-						else {
-							lib.createTab(url, currentTabIndex, result_stack)
-							// TODO set N/A label on errors
-						}
-					}
-				});
-			} else {
-				console.log("Could not find origin for tab", tabId);
-				api.action.setBadgeText({ text: "N/A", tabId: tab.id });
-			}
-		})
+    if (currentActionType === actionType.SHOW_POPUP 
+        || currentActionType === actionType.GO_TO_TAB_IF_OPEN) {
+        api.action.openPopup()
 
-	if (currentActionType === actionType.SHOW_POPUP 
-		|| currentActionType === actionType.GO_TO_TAB_IF_OPEN) {
-		api.action.openPopup()
-
-		// Popup is reset immediately because
-		// I have to call browser.action.onClicked() every time.
-		// onClicked() is not called with non-null popup.
-		api.action.setPopup({ popup: '' })
-	}
+        // I have to call browser.action.onClicked() every time,
+        // so popup should be reset immediately because
+        // onClicked() is not called with non-null popup.
+        api.action.setPopup({ popup: '' })
+    }
 }
 
 function updateOpenerState(newTab, openerTab) {
@@ -169,10 +159,14 @@ api.tabs.onRemoved.addListener(function (tabId) {
 	api.storage.local.set({ [tabId.toString()]: [] });
 });
 
-getActionType().then(updateActionType)
-api.action.onClicked.addListener(openTabOrigin);
+// read initial action type
+getActionType().then(type => currentActionType = type)
+
+api.action.onClicked.addListener(extensionButtonClick);
+
+// listen requests from popup.js 
+// and send response with tab data (url, id, etc.)
 api.runtime.onMessage.addListener((msg, _, sendResponse) => {
-	console.log('bg script recieved a message:', msg);
-	if (msg[TAB_ORIGIN_DATA_MSG] !== undefined)
-		sendResponse(lastTabOriginData)
+    if (msg[TAB_ORIGIN_DATA_MSG] !== undefined)
+        sendResponse(lastTabOriginData)
 })

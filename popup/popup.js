@@ -10,32 +10,62 @@ if (!(window.chrome || window.browser)) {
 
 const urlElt = document.querySelector('.origin-tab-info-url')
 const goBtnElt = document.querySelector('.btn-main')
+const statusElt = document.querySelector('.status-label')
 
 let tabOriginData;
 
+function copyToClipboard(elt) {
+	elt.addEventListener('click', 
+		_ => navigator.clipboard.writeText(elt.innerText || elt.value))
+}
+
+copyToClipboard(urlElt)
+copyToClipboard(statusElt)
+
+// show "copied" text when user clicks url field
+urlElt.addEventListener('click', _ => {
+	statusElt.title = ""
+	statusElt.innerText = "copied"
+	statusElt.style.removeProperty('cursor')
+	const animClass = 'copied-label-anim'
+	statusElt.classList.remove(animClass, 'color-err')
+	// delay anim class adding to be sure animation is restarted
+	requestAnimationFrame(() => statusElt.classList.add(animClass))
+})
+
+function setErrorText(text) {
+	statusElt.textContent = text
+	statusElt.title = "Click to copy Error text"
+	statusElt.style.cursor = 'copy'
+	statusElt.classList.remove('copied-label-anim')
+	statusElt.classList.add('color-err')
+}
+
 function focusTab() {
 	const { tabId, windowId } = tabOriginData
-	console.log('focusTab() tabOriginData:', tabOriginData)
 	lib.focusTab(tabId, windowId)
 	window.close()
 }
 
 function createTab() {
-	const tabId = tabOriginData.currentTabId.toString()
+	const { url, currentTabIndex, currentTabId} = tabOriginData
+	const tabId = currentTabId.toString()
+
 	chrome.storage.local.get(tabId)
 		.then(data => {
-			const historyStack = data[tabId]
-			const { url, currentTabIndex, currentTabId} = tabOriginData
-			return lib.createTab(url, currentTabIndex, currentTabId)
-		})
-		.catch(e => {
-			// TODO show error msg
+			const historyStack = data[tabId] || []
+			lib.createTab(url, currentTabIndex, historyStack)
+					.then(_ => window.close())
+					.catch(e => {
+						console.error('Cannot create tab.', e.message)
+						setErrorText(e.message)
+						chrome.action.setBadgeText({ text: "N/A", tabId: currentTabId })
+					})
 		})
 }
 
 lib.sendMessage(lib.TAB_ORIGIN_DATA_MSG, null)
 	.then(response => {
-		console.log('response from bg script: ', response);
 
 		tabOriginData = response
 
@@ -64,22 +94,31 @@ lib.sendMessage(lib.TAB_ORIGIN_DATA_MSG, null)
 			window.close()
 		}
 	})
+	.catch(err => {
+		// for some reason there might be no response from bg script
+		// e.g. bg script was unload from memory
+		// (we cannot make persistent bg scripts in Manifest V3)
+		console.error(err);
+		setErrorText(e.message)
+	})
+
+
+document.querySelector('.btn-open-ext-settings')
+	.addEventListener('click', e => {
+		e.preventDefault()
+		chrome.runtime.openOptionsPage()
+	})
+
+document.querySelectorAll('.origin-tab-info-footer a')
+	.forEach(elt => elt.addEventListener('click', _ => window.close()))
 
 lib.getActionType().then(actionType => {
-	console.log('action type read from popup.js:', actionType);
 	switch (actionType) {
 		case lib.actionType.OPEN_TAB:
 
 			// normally this branch should never be executed
-			console.log('closing popup from popup');
+			console.warn('popup should not be open for "OPEN TAB" action, closing it');
 			window.close()
-			break
-
-		case lib.actionType.GO_TO_TAB_IF_OPEN:
-		case lib.actionType.SHOW_POPUP:
-			// do nothing
-			console.log('show popup from popup.js');
-			// chrome.runtime.onMessage.addListener(onMessage)
 			break
 	}
 })
